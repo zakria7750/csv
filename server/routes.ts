@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { attendeeValidationSchema, insertCsvFileSchema } from "@shared/schema";
@@ -6,12 +6,16 @@ import { z } from "zod";
 import multer from "multer";
 import * as XLSX from 'xlsx';
 
+interface MulterRequest extends Request {
+  file?: Express.Multer.File;
+}
+
 const upload = multer({ storage: multer.memoryStorage() });
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Upload and process CSV file
-  app.post("/api/upload-csv", upload.single('file'), async (req, res) => {
+  app.post("/api/upload-csv", upload.single('file'), async (req: MulterRequest, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "لم يتم رفع أي ملف" });

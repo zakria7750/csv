@@ -47,7 +47,17 @@ export class MemStorage implements IStorage {
   async createAttendee(insertAttendee: InsertAttendee): Promise<Attendee> {
     const id = randomUUID();
     const attendee: Attendee = { 
-      ...insertAttendee, 
+      ...insertAttendee,
+      joinTime: insertAttendee.joinTime || null,
+      leaveTime: insertAttendee.leaveTime || null,
+      sessionDuration: insertAttendee.sessionDuration || null,
+      isGuest: insertAttendee.isGuest || null,
+      country: insertAttendee.country || null,
+      phoneNumber: insertAttendee.phoneNumber || null,
+      isDuplicate: insertAttendee.isDuplicate || false,
+      duplicateGroup: insertAttendee.duplicateGroup || null,
+      hasErrors: insertAttendee.hasErrors || false,
+      errorMessages: insertAttendee.errorMessages || null,
       id,
       createdAt: new Date()
     };
