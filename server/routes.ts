@@ -61,10 +61,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const fileSize = req.file.size;
 
       // Parse CSV data
+      console.log(`[CSV Processing] Starting to parse file: ${fileName}, size: ${fileSize} bytes`);
+      console.log(`[CSV Processing] Environment: NODE_ENV=${process.env.NODE_ENV}, Platform: ${process.platform}`);
+      
+      // Check file size limits (Vercel has payload limits)
+      const maxSize = 50 * 1024 * 1024; // 50MB
+      if (fileSize > maxSize) {
+        console.log(`[CSV Processing] File too large: ${fileSize} bytes (max: ${maxSize})`);
+        return res.status(400).json({ 
+          message: `حجم الملف كبير جداً (${Math.round(fileSize / 1024 / 1024)}MB). الحد الأقصى المسموح هو 50MB`,
+          fileSize,
+          maxSize
+        });
+      }
+      
       const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+      console.log(`[CSV Processing] Workbook loaded, sheets: ${workbook.SheetNames.join(', ')}`);
+      
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
       const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+      
+      console.log(`[CSV Processing] Raw data extracted, total rows: ${rawData.length}`);
 
       // Find the "Attendee Details" section header row
       let headerRowIndex = -1;
@@ -83,8 +101,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (headerRowIndex === -1 || headerRowIndex >= rawData.length) {
-        return res.status(400).json({ message: "لم يتم العثور على قسم 'Attendee Details' في الملف" });
+        console.log(`[CSV Processing] Failed to find 'Attendee Details' section. Available rows:`);
+        rawData.slice(0, 10).forEach((row, i) => {
+          console.log(`Row ${i}: ${row[0]}`);
+        });
+        return res.status(400).json({ 
+          message: "لم يتم العثور على قسم 'Attendee Details' في الملف",
+          hint: "تأكد من أن الملف يحتوي على قسم بعنوان 'Attendee Details'"
+        });
       }
+      
+      console.log(`[CSV Processing] Found 'Attendee Details' section at row ${headerRowIndex}`);
 
       // Extract attendee data starting from header row + 1
       const attendeeData = rawData.slice(headerRowIndex + 1).filter(row => 
@@ -95,6 +122,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const errors: any[] = [];
       const duplicates = new Map<string, any[]>();
 
+      console.log(`[CSV Processing] Processing ${attendeeData.length} attendee rows`);
+      
       // Process each row
       attendeeData.forEach((row, index) => {
         const rowIndex = headerRowIndex + 2 + index; // +2 because we start from header+1 and index is 0-based
@@ -171,6 +200,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const errorRecords = processedAttendees.filter(a => a.hasErrors).length;
 
       // Create CSV file record
+      console.log(`[CSV Processing] Creating CSV file record with stats: total=${totalRecords}, valid=${validRecords}, duplicates=${duplicateRecords}, errors=${errorRecords}`);
+      
       const csvFile = await storage.createCsvFile({
         fileName,
         fileSize,
@@ -179,9 +210,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         duplicateRecords,
         errorRecords
       });
+      
+      console.log(`[CSV Processing] CSV file record created with ID: ${csvFile.id}`);
 
       // Store attendees in database
-      await storage.createManyAttendees(processedAttendees);
+      console.log(`[CSV Processing] Storing ${processedAttendees.length} attendees in database`);
+      try {
+        await storage.createManyAttendees(processedAttendees);
+        console.log(`[CSV Processing] Successfully stored attendees in database`);
+      } catch (dbError) {
+        console.error(`[CSV Processing] Database error:`, dbError);
+        throw new Error(`فشل في حفظ البيانات في قاعدة البيانات: ${dbError instanceof Error ? dbError.message : String(dbError)}`);
+      }
 
       res.json({
         fileId: csvFile.id,
@@ -196,8 +236,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      console.error("Error processing CSV:", error);
-      res.status(500).json({ message: "خطأ في معالجة الملف" });
+      console.error("Error processing CSV:", {
+        error: error instanceof Error ? {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        } : error,
+        fileName: req.file?.originalname,
+        fileSize: req.file?.size,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Return more detailed error information in development
+      const isDev = process.env.NODE_ENV === 'development';
+      res.status(500).json({ 
+        message: "خطأ في معالجة الملف",
+        ...(isDev && {
+          error: error instanceof Error ? error.message : String(error),
+          details: "تأكد من أن الملف يحتوي على قسم 'Attendee Details' وأن البيانات في التنسيق الصحيح"
+        })
+      });
     }
   });
 

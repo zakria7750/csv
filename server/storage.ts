@@ -105,13 +105,18 @@ export class MemStorage implements IStorage {
   }
 
   async createCsvFile(insertFile: InsertCsvFile): Promise<CsvFile> {
+    console.log(`[MemStorage] Creating CSV file record: ${insertFile.fileName}`);
+    
     const id = randomUUID();
     const file: CsvFile = { 
       ...insertFile, 
       id,
       uploadedAt: new Date()
     };
+    
     this.csvFiles.set(id, file);
+    console.log(`[MemStorage] CSV file created with ID: ${id}`);
+    
     return file;
   }
 
@@ -122,12 +127,23 @@ export class MemStorage implements IStorage {
   }
 
   async createManyAttendees(attendees: InsertAttendee[]): Promise<Attendee[]> {
+    console.log(`[MemStorage] Creating ${attendees.length} attendees in memory storage`);
     const created: Attendee[] = [];
-    for (const attendee of attendees) {
-      const result = await this.createAttendee(attendee);
-      created.push(result);
+    
+    try {
+      for (const attendee of attendees) {
+        const result = await this.createAttendee(attendee);
+        created.push(result);
+      }
+      
+      console.log(`[MemStorage] Successfully created ${created.length} attendees`);
+      console.log(`[MemStorage] Current storage size: ${this.attendees.size} attendees, ${this.csvFiles.size} files`);
+      
+      return created;
+    } catch (error) {
+      console.error(`[MemStorage] Error creating attendees:`, error);
+      throw error;
     }
-    return created;
   }
 
   async deleteAttendeesByFileId(fileId: string): Promise<boolean> {
