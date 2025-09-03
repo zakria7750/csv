@@ -63,26 +63,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Parse CSV data
       console.log(`[CSV Processing] Starting to parse file: ${fileName}, size: ${fileSize} bytes`);
       console.log(`[CSV Processing] Environment: NODE_ENV=${process.env.NODE_ENV}, Platform: ${process.platform}`);
+      console.log(`[CSV Processing] Memory usage:`, process.memoryUsage());
       
-      // Check file size limits (Vercel has payload limits)
-      const maxSize = 50 * 1024 * 1024; // 50MB
+      // Check file size limits (Vercel functions have stricter limits)
+      const maxSize = 10 * 1024 * 1024; // 10MB for better performance
       if (fileSize > maxSize) {
         console.log(`[CSV Processing] File too large: ${fileSize} bytes (max: ${maxSize})`);
         return res.status(400).json({ 
-          message: `حجم الملف كبير جداً (${Math.round(fileSize / 1024 / 1024)}MB). الحد الأقصى المسموح هو 50MB`,
+          message: `حجم الملف كبير جداً (${Math.round(fileSize / 1024 / 1024)}MB). الحد الأقصى المسموح هو 10MB للحصول على أفضل أداء`,
           fileSize,
           maxSize
         });
       }
       
-      const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+      const workbook = XLSX.read(fileBuffer, { 
+        type: 'buffer',
+        cellDates: true, // Better date handling
+        cellNF: false,   // Don't keep number formats to save memory
+        cellText: false  // Don't keep text representations to save memory
+      });
       console.log(`[CSV Processing] Workbook loaded, sheets: ${workbook.SheetNames.join(', ')}`);
       
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
-      const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+      
+      // Use more memory-efficient parsing
+      const rawData = XLSX.utils.sheet_to_json(worksheet, { 
+        header: 1,
+        defval: '',     // Default value for empty cells
+        raw: false,     // Get formatted values instead of raw
+        dateNF: 'mm/dd/yyyy hh:mm' // Standardize date format
+      }) as any[][];
       
       console.log(`[CSV Processing] Raw data extracted, total rows: ${rawData.length}`);
+      console.log(`[CSV Processing] Memory after parsing:`, process.memoryUsage());
+      
+      // Clear the workbook from memory
+      workbook.Sheets = {};
 
       // Find the "Attendee Details" section header row
       let headerRowIndex = -1;
@@ -117,6 +134,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const attendeeData = rawData.slice(headerRowIndex + 1).filter(row => 
         row && row.length > 5 && row.some(cell => cell !== undefined && cell !== null && cell !== "")
       );
+      
+      // Clear rawData from memory after extraction
+      rawData.length = 0;
 
       const processedAttendees: any[] = [];
       const errors: any[] = [];
@@ -124,8 +144,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`[CSV Processing] Processing ${attendeeData.length} attendee rows`);
       
-      // Process each row
-      attendeeData.forEach((row, index) => {
+      // Process each row with batching for better performance
+      const batchSize = 100; // Process in smaller batches
+      let processedCount = 0;
+      
+      for (let i = 0; i < attendeeData.length; i += batchSize) {
+        const batch = attendeeData.slice(i, i + batchSize);
+        
+        batch.forEach((row, batchIndex) => {
+          const index = i + batchIndex;
         const rowIndex = headerRowIndex + 2 + index; // +2 because we start from header+1 and index is 0-based
         
         const attendeeRow = {
@@ -172,8 +199,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           duplicates.get(emailKey)!.push({ ...attendeeRow, rowIndex });
         }
 
-        processedAttendees.push(attendeeRow);
-      });
+          processedAttendees.push(attendeeRow);
+          processedCount++;
+        });
+        
+        // Log progress every batch
+        console.log(`[CSV Processing] Processed ${processedCount}/${attendeeData.length} rows`);
+        
+        // Yield control periodically to prevent timeout
+        if (i > 0 && i % (batchSize * 2) === 0) {
+          await new Promise(resolve => setImmediate(resolve));
+        }
+      }
 
       // Mark duplicates and create duplicate groups
       let duplicateGroupCounter = 1;
@@ -213,11 +250,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[CSV Processing] CSV file record created with ID: ${csvFile.id}`);
 
-      // Store attendees in database
+      // Store attendees in database with batching
       console.log(`[CSV Processing] Storing ${processedAttendees.length} attendees in database`);
+      console.log(`[CSV Processing] Memory before storage:`, process.memoryUsage());
+      
       try {
-        await storage.createManyAttendees(processedAttendees);
-        console.log(`[CSV Processing] Successfully stored attendees in database`);
+        // Store in smaller batches to avoid memory issues
+        const storageBatchSize = 50;
+        const storedAttendees = [];
+        
+        for (let i = 0; i < processedAttendees.length; i += storageBatchSize) {
+          const batch = processedAttendees.slice(i, i + storageBatchSize);
+          console.log(`[CSV Processing] Storing batch ${Math.floor(i/storageBatchSize) + 1}/${Math.ceil(processedAttendees.length/storageBatchSize)}`);
+          
+          const batchResult = await storage.createManyAttendees(batch);
+          storedAttendees.push(...batchResult);
+          
+          // Small delay between batches
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+        
+        console.log(`[CSV Processing] Successfully stored ${storedAttendees.length} attendees in database`);
+        console.log(`[CSV Processing] Memory after storage:`, process.memoryUsage());
       } catch (dbError) {
         console.error(`[CSV Processing] Database error:`, dbError);
         throw new Error(`فشل في حفظ البيانات في قاعدة البيانات: ${dbError instanceof Error ? dbError.message : String(dbError)}`);
@@ -236,24 +290,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      console.error("Error processing CSV:", {
+      const errorInfo = {
         error: error instanceof Error ? {
           name: error.name,
           message: error.message,
-          stack: error.stack
+          stack: process.env.NODE_ENV === 'development' ? error.stack : 'Stack trace hidden in production'
         } : error,
         fileName: req.file?.originalname,
         fileSize: req.file?.size,
-        timestamp: new Date().toISOString()
-      });
+        memoryUsage: process.memoryUsage(),
+        timestamp: new Date().toISOString(),
+        platform: process.platform,
+        nodeVersion: process.version
+      };
       
-      // Return more detailed error information in development
+      console.error("[CSV Processing] Critical Error:", errorInfo);
+      
+      // Determine error type and provide appropriate response
+      let errorMessage = "خطأ في معالجة الملف";
+      let statusCode = 500;
+      
+      if (error instanceof Error) {
+        if (error.message.includes('timeout') || error.message.includes('FUNCTION_INVOCATION_FAILED')) {
+          errorMessage = "المعالجة استغرقت وقتاً أطول من المتوقع. حاول بملف أصغر أو ببيانات أقل";
+          statusCode = 408; // Request Timeout
+        } else if (error.message.includes('memory') || error.message.includes('heap')) {
+          errorMessage = "الملف كبير جداً للمعالجة. حاول تقسيمه إلى ملفات أصغر";
+          statusCode = 413; // Payload Too Large
+        } else if (error.message.includes('فشل في حفظ البيانات')) {
+          errorMessage = "خطأ في حفظ البيانات. حاول مرة أخرى";
+          statusCode = 503; // Service Unavailable
+        }
+      }
+      
       const isDev = process.env.NODE_ENV === 'development';
-      res.status(500).json({ 
-        message: "خطأ في معالجة الملف",
+      res.status(statusCode).json({ 
+        message: errorMessage,
         ...(isDev && {
           error: error instanceof Error ? error.message : String(error),
-          details: "تأكد من أن الملف يحتوي على قسم 'Attendee Details' وأن البيانات في التنسيق الصحيح"
+          details: "تأكد من أن الملف يحتوي على قسم 'Attendee Details' وأن البيانات في التنسيق الصحيح",
+          memoryUsage: errorInfo.memoryUsage
         })
       });
     }
