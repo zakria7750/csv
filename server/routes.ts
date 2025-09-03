@@ -12,6 +12,41 @@ interface MulterRequest extends Request {
 
 const upload = multer({ storage: multer.memoryStorage() });
 
+// Function to convert Excel serial date to proper date string
+function convertExcelDate(excelDate: any): string {
+  if (!excelDate || excelDate === '--' || excelDate === '') return '';
+  
+  // If it's already a string, return as is
+  if (typeof excelDate === 'string') {
+    // Check if it looks like a date string already
+    if (excelDate.includes('/') || excelDate.includes('-')) {
+      return excelDate;
+    }
+    // If it's a string number, convert to number first
+    const num = parseFloat(excelDate);
+    if (isNaN(num)) return excelDate;
+    excelDate = num;
+  }
+  
+  // If it's a number (Excel serial date)
+  if (typeof excelDate === 'number' && excelDate > 1) {
+    // Excel's epoch starts at January 1, 1900 (but accounts for leap year bug)
+    const epoch = new Date(1899, 11, 30); // December 30, 1899
+    const date = new Date(epoch.getTime() + excelDate * 24 * 60 * 60 * 1000);
+    
+    // Format as MM/DD/YYYY HH:MM
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    
+    return `${month}/${day}/${year} ${hours}:${minutes}`;
+  }
+  
+  return String(excelDate);
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Upload and process CSV file
@@ -31,31 +66,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const worksheet = workbook.Sheets[sheetName];
       const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
 
-      // Find the header row (look for attendee data columns)
+      // Find the "Attendee Details" section header row
       let headerRowIndex = -1;
-      const expectedHeaders = ['حضر', 'اسم المستخدم', 'الاسم الأول', 'اسم العائلة', 'البريد الإلكتروني'];
       
       for (let i = 0; i < rawData.length; i++) {
         const row = rawData[i];
-        if (row && row.length > 5) {
-          // Check if this row contains attendee headers (Arabic or English)
-          const hasAttendeeHeaders = row.some(cell => 
-            typeof cell === 'string' && (
-              cell.includes('حضر') || cell.includes('Attended') ||
-              cell.includes('اسم المستخدم') || cell.includes('User Name') ||
-              cell.includes('البريد الإلكتروني') || cell.includes('Email')
-            )
-          );
-          
-          if (hasAttendeeHeaders) {
-            headerRowIndex = i;
+        if (row && row.length > 0) {
+          const firstCell = String(row[0] || '');
+          // Look specifically for "Attendee Details" section
+          if (firstCell.includes('Attendee Details')) {
+            // The actual header row is the next row
+            headerRowIndex = i + 1;
             break;
           }
         }
       }
 
-      if (headerRowIndex === -1) {
-        return res.status(400).json({ message: "لم يتم العثور على بيانات الحضور في الملف" });
+      if (headerRowIndex === -1 || headerRowIndex >= rawData.length) {
+        return res.status(400).json({ message: "لم يتم العثور على قسم 'Attendee Details' في الملف" });
       }
 
       // Extract attendee data starting from header row + 1
@@ -77,14 +105,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           firstName: String(row[2] || '').trim(),
           lastName: String(row[3] || '').trim(),
           email: String(row[4] || '').trim().toLowerCase(),
-          registrationTime: String(row[5] || '').trim(),
+          registrationTime: convertExcelDate(row[5]),
           approvalStatus: String(row[6] || '').trim(),
-          joinTime: String(row[7] || '').trim(),
-          leaveTime: String(row[8] || '').trim(),
+          joinTime: convertExcelDate(row[7]),
+          leaveTime: convertExcelDate(row[8]),
           sessionDuration: row[9] ? Number(row[9]) : undefined,
           isGuest: String(row[10] || '').trim(),
-          country: String(row[11] || '').trim(),
-          phoneNumber: String(row[12] || '').trim(),
+          phoneNumber: String(row[11] || '').trim(), // Fixed: phoneNumber is column 11
+          country: String(row[12] || '').trim(),     // Fixed: country is column 12
           isDuplicate: false,
           duplicateGroup: null,
           hasErrors: false,

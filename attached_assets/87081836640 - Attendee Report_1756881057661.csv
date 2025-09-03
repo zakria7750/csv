@@ -1,0 +1,47 @@
+﻿Attendee Report,,,,,,,,,,,,
+Report Generated:,7/18/2024 10:58,,,,,,,,,,,
+Topic,Webinar ID,Actual Start Time,Actual Duration (minutes),# Registered,# Cancelled,Unique Viewers,Total Users,Max Concurrent Views,Enable Registration,,,
+مبادرة تحسين العلاقة التعاقدية,870 8183 6640,6/9/2024 9:14,59,20,0,12,29,8,Yes,,,
+Host Details,,,,,,,,,,,,
+Attended,User Name (Original Name),Email,Join Time,Leave Time,Time in Session (minutes),Is Guest,Country/Region Name,,,,,
+Yes,Qassim Chamber,,6/9/2024 9:14,6/9/2024 10:12,59,No,Saudi Arabia,,,,,
+Panelist Details,,,,,,,,,,,,
+Attended,User Name (Original Name),Email,Join Time,Leave Time,Time in Session (minutes),Is Guest,Country/Region Name,,,,,
+,حمد,حمد@جيميل.كوم,6/9/2024 9:14,6/9/2024 9:26,12,Yes,Saudi Arabia,,,,,
+Yes,حمد,حمد@جيميل.كوم,6/9/2024 9:28,6/9/2024 10:07,40,Yes,Saudi Arabia,,,,,
+Yes,مدير,مدير@hrsd.gov.sa,6/9/2024 9:37,6/9/2024 10:08,31,Yes,Saudi Arabia,,,,,
+Yes,خالد ,مدير@qcc.org.sa,6/9/2024 9:15,6/9/2024 10:08,53,Yes,Saudi Arabia,,,,,
+Attendee Details,,,,,,,,,,,,
+Attended,User Name (Original Name),First Name,Last Name,Email,Registration Time,Approval Status,Join Time,Leave Time,Time in Session (minutes),Is Guest,رقم الجوال,Country/Region Name
+Yes,ahmed hassan,ahmed,hassan,email@example.com,6/6/2024 18:14,approved,6/9/2024 10:09,6/9/2024 10:10,1,Yes,555555555,Saudi Arabia
+No,abdullah khalid,abdullah,khalid,example12@example.com,6/6/2024 18:53,approved,--,--,--,--,55555,
+No,reema,fahad,,example2@example.com,6/6/2024 23:41,approved,--,--,--,--,55555555555,
+No,maha,maha,raid,mahaexample2@example.com,6/7/2024 0:59,approved,--,--,--,--,5555555555,
+Yes, ali yasser,ali,yasser,ali@example.com,6/7/2024 9:57,approved,6/9/2024 9:30,6/9/2024 9:32,2,Yes,5555555555,Saudi Arabia
+Yes,ali yasser,ali,yasser,ali@example.com,,,6/9/2024 9:32,6/9/2024 9:43,11,Yes,,Saudi Arabia
+Yes, ali yasser,ali,yasser,ali@example.com,,,6/9/2024 9:43,6/9/2024 9:44,2,Yes,,Saudi Arabia
+Yes, ali yasser,ali,yasser,ali@example.com,,,6/9/2024 10:04,6/9/2024 10:12,8,Yes,,Saudi Arabia
+Yes,fahad majed,fahad,majed,fahd@example.com,6/7/2024 10:04,approved,6/9/2024 9:18,6/9/2024 9:18,1,Yes,5555555555,Saudi Arabia
+Yes,fahad majed,fahad,majed,fahd@example.com,,,6/9/2024 9:30,6/9/2024 9:43,14,Yes,,Saudi Arabia
+Yes,fahad majed,fahad,majed,fahd@example.com,,,6/9/2024 9:44,6/9/2024 10:08,24,Yes,,Saudi Arabia
+Yes,mohammed younes,mohammed,younes,moh@example.com,6/7/2024 14:57,approved,6/9/2024 9:30,6/9/2024 9:30,1,Yes,5555555555,Saudi Arabia
+Yes,mohammed younes,mohammed,younes,moh@example.com,,,6/9/2024 9:32,6/9/2024 9:32,1,Yes,,Saudi Arabia
+Yes,mohammed younes,mohammed,younes,moh@example.com,,,6/9/2024 9:45,6/9/2024 9:58,14,Yes,,Saudi Arabia
+No,yasser,yasser,moha,yas@example.com,6/8/2024 21:23,approved,--,--,--,--,5555555555,
+No,lubna,lubna,ibrahim,lubna@example.com,6/8/2024 21:40,approved,--,--,--,--,5555555555,
+No,remas,remas,abdulaziz,remas@example.com,6/8/2024 22:02,approved,--,--,--,--,5555555555,
+No,huda,huda,khalid,huda@example.com,6/8/2024 22:54,approved,--,--,--,--,5444444444,
+No,osama,osama,ziyad,osama@example.com,6/9/2024 7:45,approved,--,--,--,--,5444444444,
+Yes,abdullah,abdullah,hmdan,abdullah@example.com,6/9/2024 8:37,approved,6/9/2024 9:30,6/9/2024 10:06,37,Yes,5444444444,Saudi Arabia
+Yes,Yousef Mohammed,Yousef,Mohammed,yousef@example.com,6/9/2024 8:44,approved,6/9/2024 9:18,6/9/2024 9:30,13,Yes,5444444444,Saudi Arabia
+Yes,Yousef Mohammed,Yousef,Mohammed,yousef@example.com,,,6/9/2024 9:31,6/9/2024 10:07,37,Yes,,Saudi Arabia
+Yes,Abdullah Mohammed,Abdullah,Mohammed ,a@example.com,6/9/2024 9:01,approved,6/9/2024 9:15,6/9/2024 9:18,3,Yes,5444444444,India
+Yes,Abdullah Mohammed,Abdullah,Mohammed ,a@example.com,,,6/9/2024 9:20,6/9/2024 9:20,1,Yes,,India
+Yes,Abdullah Mohammed,Abdullah,Mohammed ,a@example.com,,,6/9/2024 9:21,6/9/2024 9:24,4,Yes,,India
+Yes,Abdullah Mohammed,Abdullah,Mohammed ,a@example.com,,,6/9/2024 9:35,6/9/2024 10:04,30,Yes,,India
+Yes,Abdullah Mohammed,Abdullah,Mohammed ,a@example.com,,,6/9/2024 10:07,6/9/2024 10:09,3,Yes,,India
+Yes,bader hamdan,Bader,hamdan,bader@example.com,6/9/2024 9:26,approved,6/9/2024 9:27,6/9/2024 9:41,15,Yes,5444444444,Saudi Arabia
+Yes,nourah moaid,nourah,moaid,nourah@example.com,6/9/2024 9:30,approved,6/9/2024 9:31,6/9/2024 9:42,12,Yes,5444444444,Saudi Arabia
+Yes,moslah,moslah,mohna,mo@example.com,6/9/2024 9:31,approved,6/9/2024 9:39,6/9/2024 10:12,34,Yes,5444444444,Saudi Arabia
+Yes,noha majed,noha,majed,noha@example.com,6/9/2024 9:40,approved,6/9/2024 9:43,6/9/2024 10:01,19,Yes,5444444444,Saudi Arabia
+Yes,mazen,Mazen,albarqi,mazen@example.com,6/9/2024 9:51,approved,6/9/2024 9:51,6/9/2024 10:12,22,Yes,5444444444,Saudi Arabia
