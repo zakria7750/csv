@@ -68,22 +68,22 @@ export function EditRecordModal({ record, isOpen, onClose, onSave, isLoading }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto dialog-content" dir="rtl">
         <DialogHeader>
-          <DialogTitle>تحرير السجل</DialogTitle>
+          <DialogTitle className="text-lg sm:text-xl">تحرير السجل</DialogTitle>
         </DialogHeader>
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="firstName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>الاسم الأول</FormLabel>
+                    <FormLabel className="text-sm sm:text-base">الاسم الأول</FormLabel>
                     <FormControl>
-                      <Input {...field} data-testid="input-first-name" />
+                      <Input {...field} className="text-sm sm:text-base" data-testid="input-first-name" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -95,9 +95,9 @@ export function EditRecordModal({ record, isOpen, onClose, onSave, isLoading }: 
                 name="lastName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>اسم العائلة</FormLabel>
+                    <FormLabel className="text-sm sm:text-base">اسم العائلة</FormLabel>
                     <FormControl>
-                      <Input {...field} data-testid="input-last-name" />
+                      <Input {...field} className="text-sm sm:text-base" data-testid="input-last-name" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -133,15 +133,15 @@ export function EditRecordModal({ record, isOpen, onClose, onSave, isLoading }: 
               )}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="phoneNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>رقم الهاتف</FormLabel>
+                    <FormLabel className="text-sm sm:text-base">رقم الهاتف</FormLabel>
                     <FormControl>
-                      <Input {...field} className="ltr" dir="ltr" data-testid="input-phone" />
+                      <Input {...field} className="ltr text-sm sm:text-base" dir="ltr" data-testid="input-phone" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -153,9 +153,9 @@ export function EditRecordModal({ record, isOpen, onClose, onSave, isLoading }: 
                 name="country"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>البلد</FormLabel>
+                    <FormLabel className="text-sm sm:text-base">البلد</FormLabel>
                     <FormControl>
-                      <Input {...field} data-testid="input-country" />
+                      <Input {...field} className="text-sm sm:text-base" data-testid="input-country" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -163,15 +163,15 @@ export function EditRecordModal({ record, isOpen, onClose, onSave, isLoading }: 
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="registrationTime"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>وقت التسجيل</FormLabel>
+                    <FormLabel className="text-sm sm:text-base">وقت التسجيل</FormLabel>
                     <FormControl>
-                      <Input {...field} className="ltr" dir="ltr" data-testid="input-registration-time" />
+                      <Input {...field} className="ltr text-sm sm:text-base" dir="ltr" data-testid="input-registration-time" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -183,13 +183,14 @@ export function EditRecordModal({ record, isOpen, onClose, onSave, isLoading }: 
                 name="sessionDuration"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>مدة الجلسة (بالدقائق)</FormLabel>
+                    <FormLabel className="text-sm sm:text-base">مدة الجلسة (بالدقائق)</FormLabel>
                     <FormControl>
                       <Input 
                         {...field} 
                         type="number"
                         value={field.value || ''}
                         onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                        className="text-sm sm:text-base"
                         data-testid="input-session-duration"
                       />
                     </FormControl>
@@ -199,12 +200,13 @@ export function EditRecordModal({ record, isOpen, onClose, onSave, isLoading }: 
               />
             </div>
 
-            <DialogFooter className="gap-2">
+            <DialogFooter className="gap-2 flex-col sm:flex-row">
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleClose}
                 disabled={isLoading}
+                className="w-full sm:w-auto order-2 sm:order-1"
                 data-testid="cancel-button"
               >
                 إلغاء
@@ -212,6 +214,7 @@ export function EditRecordModal({ record, isOpen, onClose, onSave, isLoading }: 
               <Button 
                 type="submit" 
                 disabled={isLoading}
+                className="w-full sm:w-auto order-1 sm:order-2"
                 data-testid="save-button"
               >
                 {isLoading ? "جاري الحفظ..." : "حفظ التغييرات"}

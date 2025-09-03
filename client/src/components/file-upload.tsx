@@ -62,12 +62,12 @@ export function FileUpload({ onFileUpload, isProcessing }: FileUploadProps) {
   return (
     <div className="mb-8">
       <Card>
-        <CardContent className="p-6">
-          <h2 className="text-2xl font-bold text-foreground mb-4">رفع ملف CSV</h2>
+        <CardContent className="p-4 sm:p-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-4">رفع ملف CSV</h2>
 
           {!uploadedFile ? (
             <div
-              className={`upload-zone border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+              className={`upload-zone border-2 border-dashed rounded-lg p-6 sm:p-8 text-center cursor-pointer transition-colors ${
                 dragOver
                   ? 'border-primary bg-primary/5'
                   : 'border-border hover:border-primary'
@@ -81,7 +81,7 @@ export function FileUpload({ onFileUpload, isProcessing }: FileUploadProps) {
               <div className="mb-4">
                 <CloudUpload className="mx-auto h-12 w-12 text-muted-foreground" />
               </div>
-              <p className="text-lg text-foreground mb-2">اسحب وأفلت ملف CSV هنا</p>
+              <p className="text-base sm:text-lg text-foreground mb-2">اسحب وأفلت ملف CSV هنا</p>
               <p className="text-sm text-muted-foreground mb-4">أو انقر لاختيار ملف</p>
               <button
                 type="button"
@@ -101,25 +101,25 @@ export function FileUpload({ onFileUpload, isProcessing }: FileUploadProps) {
             </div>
           ) : (
             <div className="fade-in" data-testid="file-info">
-              <div className="bg-muted rounded-lg p-4">
-                <div className="flex items-center justify-between">
+              <div className="bg-muted rounded-lg p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-center">
-                    <FileText className="h-8 w-8 text-primary ml-3" />
-                    <div>
-                      <p className="font-medium text-foreground" data-testid="file-name">
+                    <FileText className="h-6 sm:h-8 w-6 sm:w-8 text-primary ml-3" />
+                    <div className="flex-1">
+                      <p className="font-medium text-foreground text-sm sm:text-base break-all" data-testid="file-name">
                         {uploadedFile.name}
                       </p>
-                      <p className="text-sm text-muted-foreground" data-testid="file-size">
+                      <p className="text-xs sm:text-sm text-muted-foreground" data-testid="file-size">
                         {formatFileSize(uploadedFile.size)}
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={handleRemoveFile}
-                    className="text-destructive hover:text-destructive/80 p-2 rounded-md hover:bg-destructive/10 transition-colors"
+                    className="text-destructive hover:text-destructive/80 p-2 rounded-md hover:bg-destructive/10 transition-colors self-end sm:self-auto"
                     data-testid="remove-file-button"
                   >
-                    <X className="h-5 w-5" />
+                    <X className="h-4 sm:h-5 w-4 sm:w-5" />
                   </button>
                 </div>
               </div>

@@ -41,30 +41,30 @@ export function ProcessingStats({ statistics, isProcessing }: ProcessingStatsPro
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-muted rounded-lg p-4 text-center" data-testid="total-records">
-              <div className="text-2xl font-bold text-foreground">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+            <div className="bg-muted rounded-lg p-3 sm:p-4 text-center" data-testid="total-records">
+              <div className="text-xl sm:text-2xl font-bold text-foreground">
                 {statistics.totalRecords.toLocaleString('ar-SA')}
               </div>
-              <div className="text-sm text-muted-foreground">إجمالي السجلات</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">إجمالي السجلات</div>
             </div>
-            <div className="bg-green-50 rounded-lg p-4 text-center border border-green-200" data-testid="valid-records">
-              <div className="text-2xl font-bold text-green-600">
+            <div className="bg-green-50 rounded-lg p-3 sm:p-4 text-center border border-green-200" data-testid="valid-records">
+              <div className="text-xl sm:text-2xl font-bold text-green-600">
                 {statistics.validRecords.toLocaleString('ar-SA')}
               </div>
-              <div className="text-sm text-green-600">سجل صحيح</div>
+              <div className="text-xs sm:text-sm text-green-600">سجل صحيح</div>
             </div>
-            <div className="bg-yellow-50 rounded-lg p-4 text-center border border-yellow-200" data-testid="duplicate-records">
-              <div className="text-2xl font-bold text-yellow-600">
+            <div className="bg-yellow-50 rounded-lg p-3 sm:p-4 text-center border border-yellow-200" data-testid="duplicate-records">
+              <div className="text-xl sm:text-2xl font-bold text-yellow-600">
                 {statistics.duplicateRecords.toLocaleString('ar-SA')}
               </div>
-              <div className="text-sm text-yellow-600">سجل مكرر</div>
+              <div className="text-xs sm:text-sm text-yellow-600">سجل مكرر</div>
             </div>
-            <div className="bg-red-50 rounded-lg p-4 text-center border border-red-200" data-testid="error-records">
-              <div className="text-2xl font-bold text-red-600">
+            <div className="bg-red-50 rounded-lg p-3 sm:p-4 text-center border border-red-200" data-testid="error-records">
+              <div className="text-xl sm:text-2xl font-bold text-red-600">
                 {statistics.errorRecords.toLocaleString('ar-SA')}
               </div>
-              <div className="text-sm text-red-600">سجل خاطئ</div>
+              <div className="text-xs sm:text-sm text-red-600">سجل خاطئ</div>
             </div>
           </div>
         </CardContent>

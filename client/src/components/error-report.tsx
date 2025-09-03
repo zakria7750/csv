@@ -40,14 +40,14 @@ export function ErrorReport({ errors, onEditRecord }: ErrorReportProps) {
 
           <div className="space-y-3 max-h-96 overflow-y-auto" data-testid="error-list">
             {errors.map((error, index) => (
-              <div key={index} className="border border-border rounded-lg p-4">
-                <div className="flex items-start justify-between">
+              <div key={index} className="border border-border rounded-lg p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div className="flex-1">
-                    <div className="flex items-center mb-2">
+                    <div className="flex items-center mb-2 flex-wrap gap-2">
                       <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded">
                         الصف {error.rowIndex}
                       </span>
-                      <span className={`text-xs font-medium px-2 py-1 rounded mr-2 ${getErrorTypeColor(error.type)}`}>
+                      <span className={`text-xs font-medium px-2 py-1 rounded ${getErrorTypeColor(error.type)}`}>
                         {error.type}
                       </span>
                     </div>
@@ -56,19 +56,21 @@ export function ErrorReport({ errors, onEditRecord }: ErrorReportProps) {
                         <div key={msgIndex} className="mb-1">{message}</div>
                       ))}
                     </div>
-                    <div className="mt-2 text-xs text-muted-foreground ltr bg-gray-50 p-2 rounded">
-                      {Object.entries(error.data)
-                        .filter(([key, value]) => value !== null && value !== undefined && value !== '')
-                        .map(([key, value]) => `${key}: ${value}`)
-                        .join(', ')}
+                    <div className="mt-2 text-xs text-muted-foreground ltr bg-gray-50 p-2 rounded overflow-hidden">
+                      <div className="break-words">
+                        {Object.entries(error.data)
+                          .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+                          .map(([key, value]) => `${key}: ${value}`)
+                          .join(', ')}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex space-x-2 space-x-reverse">
+                  <div className="flex space-x-2 space-x-reverse sm:flex-col sm:space-x-0 sm:space-y-2">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => onEditRecord(error.data)}
-                      className="text-primary hover:text-primary/80 h-8 px-2"
+                      className="text-primary hover:text-primary/80 h-8 px-2 flex-1 sm:flex-none"
                       data-testid={`edit-error-${index}`}
                     >
                       <Edit className="h-4 w-4 ml-1" />
@@ -77,7 +79,7 @@ export function ErrorReport({ errors, onEditRecord }: ErrorReportProps) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-destructive hover:text-destructive/80 h-8 px-2"
+                      className="text-destructive hover:text-destructive/80 h-8 px-2 flex-1 sm:flex-none"
                       data-testid={`delete-error-${index}`}
                     >
                       <Trash2 className="h-4 w-4 ml-1" />

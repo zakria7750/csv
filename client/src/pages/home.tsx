@@ -182,28 +182,30 @@ export default function Home() {
             <div className="flex items-center">
               <div className="flex-shrink-0 flex items-center">
                 <Database className="text-primary text-2xl ml-3" />
-                <span className="text-xl font-bold text-foreground">معالج ملفات CSV</span>
+                <span className="text-lg sm:text-xl font-bold text-foreground">معالج ملفات CSV</span>
               </div>
             </div>
-            <div className="flex items-center space-x-4 space-x-reverse">
-              <button className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors flex items-center">
+            <div className="flex items-center space-x-2 sm:space-x-4 space-x-reverse">
+              <button className="hidden sm:flex bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors items-center">
                 <Settings className="ml-2 h-4 w-4" />
                 الإعدادات
               </button>
               <button
                 onClick={exportToExcel}
                 disabled={!processingResult}
-                className="bg-secondary text-secondary-foreground px-4 py-2 rounded-md hover:bg-secondary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                className="bg-secondary text-secondary-foreground px-2 sm:px-4 py-2 rounded-md hover:bg-secondary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                data-testid="export-excel-button"
               >
-                <Download className="ml-2 h-4 w-4" />
-                تصدير Excel
+                <Download className="ml-1 sm:ml-2 h-4 w-4" />
+                <span className="hidden sm:inline">تصدير Excel</span>
+                <span className="sm:hidden">تصدير</span>
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* File Upload Section */}
         <FileUpload
           onFileUpload={handleFileUpload}
