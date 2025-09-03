@@ -1,0 +1,749 @@
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>معالج ملفات CSV وقاعدة البيانات</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                borderRadius: {
+                    lg: "var(--radius)",
+                    md: "calc(var(--radius) - 2px)",
+                    sm: "calc(var(--radius) - 4px)",
+                },
+                colors: {
+                    background: "var(--background)",
+                    foreground: "var(--foreground)",
+                    card: {
+                        DEFAULT: "var(--card)",
+                        foreground: "var(--card-foreground)",
+                    },
+                    popover: {
+                        DEFAULT: "var(--popover)",
+                        foreground: "var(--popover-foreground)",
+                    },
+                    primary: {
+                        DEFAULT: "var(--primary)",
+                        foreground: "var(--primary-foreground)",
+                    },
+                    secondary: {
+                        DEFAULT: "var(--secondary)",
+                        foreground: "var(--secondary-foreground)",
+                    },
+                    muted: {
+                        DEFAULT: "var(--muted)",
+                        foreground: "var(--muted-foreground)",
+                    },
+                    accent: {
+                        DEFAULT: "var(--accent)",
+                        foreground: "var(--accent-foreground)",
+                    },
+                    destructive: {
+                        DEFAULT: "var(--destructive)",
+                        foreground: "var(--destructive-foreground)",
+                    },
+                    border: "var(--border)",
+                    input: "var(--input)",
+                    ring: "var(--ring)",
+                }
+            },
+            fontFamily: {
+                arabic: ['Noto Sans Arabic', 'Arial', 'sans-serif'],
+                english: ['Inter', 'Arial', 'sans-serif'],
+            }
+        }
+    };
+    </script>
+    <style>
+        :root {
+            --background: hsl(210 40% 98%);
+            --foreground: hsl(222.2 84% 4.9%);
+            --card: hsl(0 0% 100%);
+            --card-foreground: hsl(222.2 84% 4.9%);
+            --popover: hsl(0 0% 100%);
+            --popover-foreground: hsl(222.2 84% 4.9%);
+            --primary: hsl(210 79% 46%);
+            --primary-foreground: hsl(210 40% 98%);
+            --secondary: hsl(174 70% 41%);
+            --secondary-foreground: hsl(222.2 84% 4.9%);
+            --muted: hsl(210 40% 96%);
+            --muted-foreground: hsl(215.4 16.3% 46.9%);
+            --accent: hsl(210 40% 96%);
+            --accent-foreground: hsl(222.2 84% 4.9%);
+            --destructive: hsl(0 84.2% 60.2%);
+            --destructive-foreground: hsl(210 40% 98%);
+            --border: hsl(214.3 31.8% 91.4%);
+            --input: hsl(214.3 31.8% 91.4%);
+            --ring: hsl(210 79% 46%);
+            --radius: 0.5rem;
+        }
+
+        .dark {
+            --background: hsl(222.2 84% 4.9%);
+            --foreground: hsl(210 40% 98%);
+            --card: hsl(222.2 84% 4.9%);
+            --card-foreground: hsl(210 40% 98%);
+            --popover: hsl(222.2 84% 4.9%);
+            --popover-foreground: hsl(210 40% 98%);
+            --primary: hsl(210 79% 46%);
+            --primary-foreground: hsl(222.2 84% 4.9%);
+            --secondary: hsl(217.2 32.6% 17.5%);
+            --secondary-foreground: hsl(210 40% 98%);
+            --muted: hsl(217.2 32.6% 17.5%);
+            --muted-foreground: hsl(215 20.2% 65.1%);
+            --accent: hsl(217.2 32.6% 17.5%);
+            --accent-foreground: hsl(210 40% 98%);
+            --destructive: hsl(0 62.8% 30.6%);
+            --destructive-foreground: hsl(210 40% 98%);
+            --border: hsl(217.2 32.6% 17.5%);
+            --input: hsl(217.2 32.6% 17.5%);
+            --ring: hsl(212.7 26.8% 83.9%);
+        }
+
+        * {
+            border-color: hsl(var(--border));
+        }
+
+        body {
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+        }
+
+        .upload-zone {
+            transition: all 0.3s ease;
+        }
+
+        .upload-zone.dragover {
+            border-color: hsl(var(--primary));
+            background-color: hsl(var(--primary) / 0.05);
+        }
+
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .table-container {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .ltr {
+            direction: ltr;
+            text-align: left;
+        }
+
+        .rtl {
+            direction: rtl;
+            text-align: right;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="font-arabic">
+    <!-- @COMPONENT: MainLayout -->
+    <div class="min-h-screen bg-background">
+        <!-- @COMPONENT: Header -->
+        <header class="bg-card border-b border-border shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-database text-primary text-2xl mr-3"></i>
+                            <span class="text-xl font-bold text-foreground">معالج ملفات CSV</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4 space-x-reverse">
+                        <button class="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors">
+                            <i class="fas fa-cog mr-2"></i>
+                            الإعدادات
+                        </button>
+                        <button class="bg-secondary text-secondary-foreground px-4 py-2 rounded-md hover:bg-secondary/90 transition-colors">
+                            <i class="fas fa-download mr-2"></i>
+                            تصدير Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- @END_COMPONENT: Header -->
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- @COMPONENT: FileUploadSection -->
+            <div class="mb-8">
+                <div class="bg-card rounded-lg shadow-sm border border-border p-6">
+                    <h2 class="text-2xl font-bold text-foreground mb-4">رفع ملف CSV</h2>
+                    
+                    <!-- File Upload Zone -->
+                    <div class="upload-zone border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
+                        <div class="mb-4">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-muted-foreground"></i>
+                        </div>
+                        <p class="text-lg text-foreground mb-2">اسحب وأفلت ملف CSV هنا</p>
+                        <p class="text-sm text-muted-foreground mb-4">أو انقر لاختيار ملف</p>
+                        <button class="bg-primary text-primary-foreground px-6 py-2 rounded-md hover:bg-primary/90 transition-colors">
+                            اختيار ملف
+                        </button>
+                        <input type="file" accept=".csv" class="hidden" data-implementation="Handle file upload and validation">
+                    </div>
+
+                    <!-- File Info (shown after upload) -->
+                    <div class="mt-4 hidden fade-in" id="file-info">
+                        <div class="bg-muted rounded-lg p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium text-foreground" data-bind="fileName">webinar_data.csv</p>
+                                    <p class="text-sm text-muted-foreground" data-bind="fileSize">2.5 MB • 450 سجل</p>
+                                </div>
+                                <button class="text-destructive hover:text-destructive/80">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: FileUploadSection -->
+
+            <!-- @COMPONENT: ProcessingSection -->
+            <div class="mb-8">
+                <div class="bg-card rounded-lg shadow-sm border border-border p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-2xl font-bold text-foreground">معالجة البيانات</h2>
+                        <button class="bg-primary text-primary-foreground px-6 py-2 rounded-md hover:bg-primary/90 transition-colors">
+                            <i class="fas fa-play mr-2"></i>
+                            بدء المعالجة
+                        </button>
+                    </div>
+
+                    <!-- Processing Progress -->
+                    <div class="mb-6" id="processing-progress" data-state="hidden">
+                        <div class="flex items-center mb-2">
+                            <span class="text-sm font-medium text-foreground">جاري المعالجة...</span>
+                            <span class="text-sm text-muted-foreground mr-auto" data-bind="progressPercent">65%</span>
+                        </div>
+                        <div class="bg-muted rounded-full h-2">
+                            <div class="bg-primary h-2 rounded-full progress-bar" style="width: 65%" data-bind="progressWidth"></div>
+                        </div>
+                        <p class="text-sm text-muted-foreground mt-2" data-bind="currentStep">التحقق من صحة البيانات...</p>
+                    </div>
+
+                    <!-- Processing Statistics -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="bg-muted rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-foreground" data-bind="totalRecords">450</div>
+                            <div class="text-sm text-muted-foreground">إجمالي السجلات</div>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-4 text-center border border-green-200">
+                            <div class="text-2xl font-bold text-green-600" data-bind="validRecords">387</div>
+                            <div class="text-sm text-green-600">سجل صحيح</div>
+                        </div>
+                        <div class="bg-yellow-50 rounded-lg p-4 text-center border border-yellow-200">
+                            <div class="text-2xl font-bold text-yellow-600" data-bind="duplicateRecords">42</div>
+                            <div class="text-sm text-yellow-600">سجل مكرر</div>
+                        </div>
+                        <div class="bg-red-50 rounded-lg p-4 text-center border border-red-200">
+                            <div class="text-2xl font-bold text-red-600" data-bind="errorRecords">21</div>
+                            <div class="text-sm text-red-600">سجل خاطئ</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: ProcessingSection -->
+
+            <!-- @COMPONENT: ErrorReportSection -->
+            <div class="mb-8" id="error-report">
+                <div class="bg-card rounded-lg shadow-sm border border-border p-6">
+                    <h2 class="text-2xl font-bold text-foreground mb-4">تقرير الأخطاء</h2>
+                    
+                    <!-- Error Summary -->
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-triangle text-red-500 mr-3"></i>
+                            <div>
+                                <h3 class="font-medium text-red-800">تم العثور على 21 خطأ في البيانات</h3>
+                                <p class="text-sm text-red-600">يرجى مراجعة الأخطاء أدناه وتصحيحها</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Error Details -->
+                    <div class="space-y-3">
+                        <!-- @MAP: errors.map(error => ( -->
+                        <div class="border border-border rounded-lg p-4">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center mb-2">
+                                        <span class="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded">الصف 15</span>
+                                        <span class="text-sm text-muted-foreground mr-2" data-bind="errorType">بريد إلكتروني غير صحيح</span>
+                                    </div>
+                                    <p class="text-sm text-foreground" data-bind="errorDetails">البريد الإلكتروني "ahmed.example.com" لا يحتوي على رمز @</p>
+                                    <div class="mt-2 text-xs text-muted-foreground ltr">
+                                        <span data-bind="originalData">ahmed, Ahmed, Khalil, ahmed.example.com, 9/6/2024</span>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2 space-x-reverse">
+                                    <button class="text-primary hover:text-primary/80 text-sm">
+                                        <i class="fas fa-edit mr-1"></i>
+                                        تحرير
+                                    </button>
+                                    <button class="text-destructive hover:text-destructive/80 text-sm">
+                                        <i class="fas fa-trash mr-1"></i>
+                                        حذف
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border border-border rounded-lg p-4">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center mb-2">
+                                        <span class="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded">الصف 23</span>
+                                        <span class="text-sm text-muted-foreground mr-2" data-bind="errorType">رقم هاتف غير صحيح</span>
+                                    </div>
+                                    <p class="text-sm text-foreground" data-bind="errorDetails">رقم الهاتف "966-5xx-xxx-xxx" يحتوي على رموز غير مسموحة</p>
+                                    <div class="mt-2 text-xs text-muted-foreground ltr">
+                                        <span data-bind="originalData">نعم, سارة محمد, sara@example.com, 966-5xx-xxx-xxx</span>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2 space-x-reverse">
+                                    <button class="text-primary hover:text-primary/80 text-sm">
+                                        <i class="fas fa-edit mr-1"></i>
+                                        تحرير
+                                    </button>
+                                    <button class="text-destructive hover:text-destructive/80 text-sm">
+                                        <i class="fas fa-trash mr-1"></i>
+                                        حذف
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border border-border rounded-lg p-4">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center mb-2">
+                                        <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-1 rounded">الصف 31</span>
+                                        <span class="text-sm text-muted-foreground mr-2" data-bind="errorType">بيانات مفقودة</span>
+                                    </div>
+                                    <p class="text-sm text-foreground" data-bind="errorDetails">الاسم الأول والأخير فارغان أو يحتويان على "--"</p>
+                                    <div class="mt-2 text-xs text-muted-foreground ltr">
+                                        <span data-bind="originalData">نعم, --, --, omar@example.com, 9/6/2024</span>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2 space-x-reverse">
+                                    <button class="text-primary hover:text-primary/80 text-sm">
+                                        <i class="fas fa-edit mr-1"></i>
+                                        تحرير
+                                    </button>
+                                    <button class="text-destructive hover:text-destructive/80 text-sm">
+                                        <i class="fas fa-trash mr-1"></i>
+                                        حذف
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- @END_MAP )) -->
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: ErrorReportSection -->
+
+            <!-- @COMPONENT: DataTableSection -->
+            <div class="mb-8">
+                <div class="bg-card rounded-lg shadow-sm border border-border p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-2xl font-bold text-foreground">البيانات المعالجة</h2>
+                        <div class="flex space-x-3 space-x-reverse">
+                            <button class="bg-secondary text-secondary-foreground px-4 py-2 rounded-md hover:bg-secondary/90 transition-colors">
+                                <i class="fas fa-filter mr-2"></i>
+                                تصفية
+                            </button>
+                            <button class="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors">
+                                <i class="fas fa-download mr-2"></i>
+                                تصدير Excel
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Search and Filter -->
+                    <div class="mb-4 flex flex-col sm:flex-row gap-4">
+                        <div class="flex-1">
+                            <div class="relative">
+                                <i class="fas fa-search absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
+                                <input type="text" placeholder="البحث في البيانات..." class="w-full pr-10 pl-4 py-2 border border-border rounded-md focus:ring-2 focus:ring-ring focus:border-transparent">
+                            </div>
+                        </div>
+                        <select class="border border-border rounded-md px-4 py-2 focus:ring-2 focus:ring-ring focus:border-transparent">
+                            <option>جميع السجلات</option>
+                            <option>السجلات الصحيحة فقط</option>
+                            <option>السجلات المكررة فقط</option>
+                            <option>السجلات التي تحتوي على أخطاء</option>
+                        </select>
+                    </div>
+
+                    <!-- Data Table -->
+                    <div class="table-container overflow-x-auto">
+                        <table class="w-full border-collapse">
+                            <thead class="bg-muted">
+                                <tr>
+                                    <th class="text-right px-4 py-3 border border-border font-medium text-foreground">حضر</th>
+                                    <th class="text-right px-4 py-3 border border-border font-medium text-foreground">اسم المستخدم</th>
+                                    <th class="text-right px-4 py-3 border border-border font-medium text-foreground">الاسم الأول</th>
+                                    <th class="text-right px-4 py-3 border border-border font-medium text-foreground">اسم العائلة</th>
+                                    <th class="text-right px-4 py-3 border border-border font-medium text-foreground">البريد الإلكتروني</th>
+                                    <th class="text-right px-4 py-3 border border-border font-medium text-foreground">وقت التسجيل</th>
+                                    <th class="text-right px-4 py-3 border border-border font-medium text-foreground">المدة (دقيقة)</th>
+                                    <th class="text-right px-4 py-3 border border-border font-medium text-foreground">البلد</th>
+                                    <th class="text-right px-4 py-3 border border-border font-medium text-foreground">الرقم</th>
+                                    <th class="text-right px-4 py-3 border border-border font-medium text-foreground">الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- @MAP: processedData.map(record => ( -->
+                                <tr class="hover:bg-muted/50 transition-colors">
+                                    <td class="px-4 py-3 border border-border">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800" data-bind="attended">نعم</span>
+                                    </td>
+                                    <td class="px-4 py-3 border border-border text-foreground" data-bind="username">عبد الله حمدان</td>
+                                    <td class="px-4 py-3 border border-border text-foreground" data-bind="firstName">عبد الله</td>
+                                    <td class="px-4 py-3 border border-border text-foreground" data-bind="lastName">حمدان</td>
+                                    <td class="px-4 py-3 border border-border text-primary ltr" data-bind="email">abdullah@example.com</td>
+                                    <td class="px-4 py-3 border border-border text-muted-foreground ltr" data-bind="registrationTime">9/6/2024 8:37</td>
+                                    <td class="px-4 py-3 border border-border text-center text-foreground" data-bind="sessionDuration">37</td>
+                                    <td class="px-4 py-3 border border-border text-foreground" data-bind="country">المملكة العربية السعودية</td>
+                                    <td class="px-4 py-3 border border-border text-foreground ltr" data-bind="phoneNumber">5444444444</td>
+                                    <td class="px-4 py-3 border border-border">
+                                        <div class="flex space-x-2 space-x-reverse">
+                                            <button class="text-primary hover:text-primary/80 p-1" data-event="click:editRecord" title="تحرير">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="text-destructive hover:text-destructive/80 p-1" data-event="click:deleteRecord" title="حذف">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <tr class="hover:bg-muted/50 transition-colors bg-yellow-50">
+                                    <td class="px-4 py-3 border border-border">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800" data-bind="attended">نعم</span>
+                                    </td>
+                                    <td class="px-4 py-3 border border-border text-foreground" data-bind="username">عبد الله حمدان</td>
+                                    <td class="px-4 py-3 border border-border text-foreground" data-bind="firstName">عبد الله</td>
+                                    <td class="px-4 py-3 border border-border text-foreground" data-bind="lastName">حمدان</td>
+                                    <td class="px-4 py-3 border border-border text-primary ltr" data-bind="email">abdullah@example.com</td>
+                                    <td class="px-4 py-3 border border-border text-muted-foreground ltr" data-bind="registrationTime">9/6/2024 9:15</td>
+                                    <td class="px-4 py-3 border border-border text-center text-foreground" data-bind="sessionDuration">22</td>
+                                    <td class="px-4 py-3 border border-border text-foreground" data-bind="country">المملكة العربية السعودية</td>
+                                    <td class="px-4 py-3 border border-border text-foreground ltr" data-bind="phoneNumber">5444444444</td>
+                                    <td class="px-4 py-3 border border-border">
+                                        <div class="flex space-x-2 space-x-reverse">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">مكرر</span>
+                                            <button class="text-destructive hover:text-destructive/80 p-1" data-event="click:deleteRecord" title="حذف">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <tr class="hover:bg-muted/50 transition-colors">
+                                    <td class="px-4 py-3 border border-border">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800" data-bind="attended">نعم</span>
+                                    </td>
+                                    <td class="px-4 py-3 border border-border text-foreground" data-bind="username">Sarah Johnson</td>
+                                    <td class="px-4 py-3 border border-border text-foreground" data-bind="firstName">Sarah</td>
+                                    <td class="px-4 py-3 border border-border text-foreground" data-bind="lastName">Johnson</td>
+                                    <td class="px-4 py-3 border border-border text-primary ltr" data-bind="email">sarah.johnson@example.com</td>
+                                    <td class="px-4 py-3 border border-border text-muted-foreground ltr" data-bind="registrationTime">9/6/2024 8:42</td>
+                                    <td class="px-4 py-3 border border-border text-center text-foreground" data-bind="sessionDuration">45</td>
+                                    <td class="px-4 py-3 border border-border text-foreground" data-bind="country">United States</td>
+                                    <td class="px-4 py-3 border border-border text-foreground ltr" data-bind="phoneNumber">+1234567890</td>
+                                    <td class="px-4 py-3 border border-border">
+                                        <div class="flex space-x-2 space-x-reverse">
+                                            <button class="text-primary hover:text-primary/80 p-1" data-event="click:editRecord" title="تحرير">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="text-destructive hover:text-destructive/80 p-1" data-event="click:deleteRecord" title="حذف">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <tr class="hover:bg-muted/50 transition-colors">
+                                    <td class="px-4 py-3 border border-border">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800" data-bind="attended">نعم</td>
+                                    <td class="px-4 py-3 border border-border text-foreground" data-bind="username">فاطمة العتيبي</td>
+                                    <td class="px-4 py-3 border border-border text-foreground" data-bind="firstName">فاطمة</td>
+                                    <td class="px-4 py-3 border border-border text-foreground" data-bind="lastName">العتيبي</td>
+                                    <td class="px-4 py-3 border border-border text-primary ltr" data-bind="email">fatima.alotaibi@example.com</td>
+                                    <td class="px-4 py-3 border border-border text-muted-foreground ltr" data-bind="registrationTime">9/6/2024 8:55</td>
+                                    <td class="px-4 py-3 border border-border text-center text-foreground" data-bind="sessionDuration">28</td>
+                                    <td class="px-4 py-3 border border-border text-foreground" data-bind="country">المملكة العربية السعودية</td>
+                                    <td class="px-4 py-3 border border-border text-foreground ltr" data-bind="phoneNumber">5666777888</td>
+                                    <td class="px-4 py-3 border border-border">
+                                        <div class="flex space-x-2 space-x-reverse">
+                                            <button class="text-primary hover:text-primary/80 p-1" data-event="click:editRecord" title="تحرير">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="text-destructive hover:text-destructive/80 p-1" data-event="click:deleteRecord" title="حذف">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <tr class="hover:bg-muted/50 transition-colors bg-red-50">
+                                    <td class="px-4 py-3 border border-border">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800" data-bind="attended">خطأ</span>
+                                    </td>
+                                    <td class="px-4 py-3 border border-border text-foreground" data-bind="username">--</td>
+                                    <td class="px-4 py-3 border border-border text-muted-foreground" data-bind="firstName">--</td>
+                                    <td class="px-4 py-3 border border-border text-muted-foreground" data-bind="lastName">--</td>
+                                    <td class="px-4 py-3 border border-border text-red-600 ltr" data-bind="email">invalid.email.com</td>
+                                    <td class="px-4 py-3 border border-border text-muted-foreground ltr" data-bind="registrationTime">9/6/2024 9:10</td>
+                                    <td class="px-4 py-3 border border-border text-center text-foreground" data-bind="sessionDuration">5</td>
+                                    <td class="px-4 py-3 border border-border text-foreground" data-bind="country">غير محدد</td>
+                                    <td class="px-4 py-3 border border-border text-red-600 ltr" data-bind="phoneNumber">966-5xx-xxx</td>
+                                    <td class="px-4 py-3 border border-border">
+                                        <div class="flex space-x-2 space-x-reverse">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">خطأ</span>
+                                            <button class="text-primary hover:text-primary/80 p-1" data-event="click:editRecord" title="تحرير">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="text-destructive hover:text-destructive/80 p-1" data-event="click:deleteRecord" title="حذف">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- @END_MAP )) -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="flex items-center justify-between mt-4">
+                        <div class="text-sm text-muted-foreground">
+                            عرض 1-5 من 387 سجل
+                        </div>
+                        <div class="flex space-x-2 space-x-reverse">
+                            <button class="px-3 py-1 border border-border rounded hover:bg-muted" disabled>
+                                السابق
+                            </button>
+                            <button class="px-3 py-1 bg-primary text-primary-foreground rounded">1</button>
+                            <button class="px-3 py-1 border border-border rounded hover:bg-muted">2</button>
+                            <button class="px-3 py-1 border border-border rounded hover:bg-muted">3</button>
+                            <button class="px-3 py-1 border border-border rounded hover:bg-muted">
+                                التالي
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: DataTableSection -->
+
+            <!-- @COMPONENT: DatabaseStorageSection -->
+            <div class="mb-8">
+                <div class="bg-card rounded-lg shadow-sm border border-border p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-2xl font-bold text-foreground">حفظ في قاعدة البيانات</h2>
+                        <button class="bg-primary text-primary-foreground px-6 py-2 rounded-md hover:bg-primary/90 transition-colors">
+                            <i class="fas fa-save mr-2"></i>
+                            حفظ البيانات
+                        </button>
+                    </div>
+
+                    <!-- Database Configuration -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-foreground mb-2">نوع قاعدة البيانات</label>
+                            <select class="w-full border border-border rounded-md px-4 py-2 focus:ring-2 focus:ring-ring focus:border-transparent">
+                                <option>MySQL</option>
+                                <option>PostgreSQL</option>
+                                <option>Firebase</option>
+                                <option>SQLite</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-foreground mb-2">اسم الجدول</label>
+                            <input type="text" value="webinar_attendees" class="w-full border border-border rounded-md px-4 py-2 focus:ring-2 focus:ring-ring focus:border-transparent">
+                        </div>
+                    </div>
+
+                    <!-- Storage Summary -->
+                    <div class="bg-muted rounded-lg p-4">
+                        <h3 class="font-medium text-foreground mb-3">ملخص البيانات المراد حفظها:</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                                <span class="text-muted-foreground">السجلات الصحيحة:</span>
+                                <span class="font-medium text-green-600 mr-2" data-bind="validForStorage">387</span>
+                            </div>
+                            <div>
+                                <span class="text-muted-foreground">السجلات المكررة:</span>
+                                <span class="font-medium text-yellow-600 mr-2" data-bind="duplicatesHandled">42</span>
+                            </div>
+                            <div>
+                                <span class="text-muted-foreground">الأخطاء المستبعدة:</span>
+                                <span class="font-medium text-red-600 mr-2" data-bind="errorsExcluded">21</span>
+                            </div>
+                            <div>
+                                <span class="text-muted-foreground">إجمالي للحفظ:</span>
+                                <span class="font-medium text-primary mr-2" data-bind="totalToSave">387</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: DatabaseStorageSection -->
+        </main>
+    </div>
+    <!-- @END_COMPONENT: MainLayout -->
+
+    <!-- @COMPONENT: EditRecordModal -->
+    <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" data-state="hidden">
+        <div class="bg-card rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-border">
+                <h3 class="text-xl font-bold text-foreground">تحرير السجل</h3>
+            </div>
+            <div class="p-6">
+                <form class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-foreground mb-2">الاسم الأول</label>
+                            <input type="text" value="عبد الله" class="w-full border border-border rounded-md px-4 py-2 focus:ring-2 focus:ring-ring focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-foreground mb-2">اسم العائلة</label>
+                            <input type="text" value="حمدان" class="w-full border border-border rounded-md px-4 py-2 focus:ring-2 focus:ring-ring focus:border-transparent">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-foreground mb-2">البريد الإلكتروني</label>
+                        <input type="email" value="abdullah@example.com" class="w-full border border-border rounded-md px-4 py-2 focus:ring-2 focus:ring-ring focus:border-transparent ltr">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-foreground mb-2">رقم الهاتف</label>
+                            <input type="text" value="5444444444" class="w-full border border-border rounded-md px-4 py-2 focus:ring-2 focus:ring-ring focus:border-transparent ltr">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-foreground mb-2">البلد</label>
+                            <input type="text" value="المملكة العربية السعودية" class="w-full border border-border rounded-md px-4 py-2 focus:ring-2 focus:ring-ring focus:border-transparent">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="p-6 border-t border-border flex justify-end space-x-3 space-x-reverse">
+                <button class="px-4 py-2 border border-border rounded-md hover:bg-muted transition-colors" data-event="click:closeModal">
+                    إلغاء
+                </button>
+                <button class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors" data-event="click:saveRecord">
+                    حفظ التغييرات
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: EditRecordModal -->
+
+    <!-- @COMPONENT: ToastNotification -->
+    <div id="toast" class="fixed bottom-4 left-4 bg-card border border-border rounded-lg shadow-lg p-4 hidden fade-in" data-state="hidden">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle text-green-500 mr-3" data-bind="toastIcon"></i>
+            <div>
+                <p class="font-medium text-foreground" data-bind="toastTitle">تم بنجاح</p>
+                <p class="text-sm text-muted-foreground" data-bind="toastMessage">تم حفظ البيانات بنجاح في قاعدة البيانات</p>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: ToastNotification -->
+
+    <script>
+        // TODO: Implement business logic, API calls, and state management
+        (function() {
+            // File upload simulation
+            const uploadZone = document.querySelector('.upload-zone');
+            const fileInfo = document.getElementById('file-info');
+            
+            uploadZone?.addEventListener('click', function() {
+                // Simulate file selection
+                setTimeout(() => {
+                    fileInfo?.classList.remove('hidden');
+                }, 500);
+            });
+
+            // Drag and drop handlers
+            uploadZone?.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('dragover');
+            });
+
+            uploadZone?.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+            });
+
+            uploadZone?.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+                // Handle file drop
+                fileInfo?.classList.remove('hidden');
+            });
+
+            // Modal handlers
+            const editModal = document.getElementById('edit-modal');
+            const editButtons = document.querySelectorAll('[data-event="click:editRecord"]');
+            
+            editButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    editModal?.classList.remove('hidden');
+                    editModal?.classList.add('flex');
+                });
+            });
+
+            document.querySelector('[data-event="click:closeModal"]')?.addEventListener('click', function() {
+                editModal?.classList.add('hidden');
+                editModal?.classList.remove('flex');
+            });
+
+            // Toast notification
+            function showToast(title, message, type = 'success') {
+                const toast = document.getElementById('toast');
+                const icon = toast?.querySelector('[data-bind="toastIcon"]');
+                const titleEl = toast?.querySelector('[data-bind="toastTitle"]');
+                const messageEl = toast?.querySelector('[data-bind="toastMessage"]');
+                
+                if (icon && titleEl && messageEl) {
+                    icon.className = type === 'success' ? 'fas fa-check-circle text-green-500 mr-3' : 'fas fa-exclamation-circle text-red-500 mr-3';
+                    titleEl.textContent = title;
+                    messageEl.textContent = message;
+                    
+                    toast?.classList.remove('hidden');
+                    
+                    setTimeout(() => {
+                        toast?.classList.add('hidden');
+                    }, 3000);
+                }
+            }
+
+            // Processing simulation
+            document.querySelector('[data-event="click:handleSubmit"]')?.addEventListener('click', function() {
+                showToast('تم بنجاح', 'تم حفظ البيانات بنجاح في قاعدة البيانات');
+            });
+        })();
+    </script>
+</body>
+</html>

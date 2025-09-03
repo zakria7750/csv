@@ -1,0 +1,796 @@
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Webinar Data Processor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            borderRadius: {
+              lg: "var(--radius)",
+              md: "calc(var(--radius) - 2px)",
+              sm: "calc(var(--radius) - 4px)",
+            },
+            colors: {
+              background: "var(--background)",
+              foreground: "var(--foreground)",
+              card: {
+                DEFAULT: "var(--card)",
+                foreground: "var(--card-foreground)",
+              },
+              popover: {
+                DEFAULT: "var(--popover)",
+                foreground: "var(--popover-foreground)",
+              },
+              primary: {
+                DEFAULT: "var(--primary)",
+                foreground: "var(--primary-foreground)",
+              },
+              secondary: {
+                DEFAULT: "var(--secondary)",
+                foreground: "var(--secondary-foreground)",
+              },
+              muted: {
+                DEFAULT: "var(--muted)",
+                foreground: "var(--muted-foreground)",
+              },
+              accent: {
+                DEFAULT: "var(--accent)",
+                foreground: "var(--accent-foreground)",
+              },
+              destructive: {
+                DEFAULT: "var(--destructive)",
+                foreground: "var(--destructive-foreground)",
+              },
+              border: "var(--border)",
+              input: "var(--input)",
+              ring: "var(--ring)",
+            },
+            fontFamily: {
+              sans: ["var(--font-sans)", "Inter", "sans-serif"],
+            }
+          },
+        }
+      };
+    </script>
+    <style>
+      :root {
+        --background: hsl(210 40% 98%);
+        --foreground: hsl(222.2 84% 4.9%);
+        --card: hsl(0 0% 100%);
+        --card-foreground: hsl(222.2 84% 4.9%);
+        --popover: hsl(0 0% 100%);
+        --popover-foreground: hsl(222.2 84% 4.9%);
+        --primary: hsl(221.2 83.2% 53.3%);
+        --primary-foreground: hsl(210 40% 98%);
+        --secondary: hsl(210 40% 96%);
+        --secondary-foreground: hsl(222.2 47.4% 11.2%);
+        --muted: hsl(210 40% 96%);
+        --muted-foreground: hsl(215.4 16.3% 46.9%);
+        --accent: hsl(210 40% 96%);
+        --accent-foreground: hsl(222.2 47.4% 11.2%);
+        --destructive: hsl(0 62.8% 30.6%);
+        --destructive-foreground: hsl(210 40% 98%);
+        --border: hsl(214.3 31.8% 91.4%);
+        --input: hsl(214.3 31.8% 91.4%);
+        --ring: hsl(221.2 83.2% 53.3%);
+        --radius: 0.75rem;
+      }
+      
+      .rtl-support {
+        text-align: right;
+        direction: rtl;
+      }
+      
+      .file-upload-hover {
+        transition: all 0.2s ease-in-out;
+      }
+      
+      .file-upload-hover:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-background text-foreground min-h-screen font-sans">
+    <!-- @COMPONENT: Header [Navigation and title] -->
+    <header class="bg-card border-b border-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-6">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                        <i class="fas fa-table text-primary-foreground text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-foreground">CSV Data Processor</h1>
+                        <p class="text-muted-foreground text-sm">Webinar Attendance Data Management</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="text-muted-foreground hover:text-foreground transition-colors">
+                        <i class="fas fa-cog text-lg"></i>
+                    </button>
+                    <button class="text-muted-foreground hover:text-foreground transition-colors">
+                        <i class="fas fa-question-circle text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- @END_COMPONENT: Header -->
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- @COMPONENT: ProcessingProgress [Shows current step and progress] -->
+        <div class="mb-8">
+            <div class="flex items-center space-x-4 mb-4">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium">1</div>
+                    <span class="text-foreground font-medium">Upload CSV</span>
+                </div>
+                <div class="h-px bg-border flex-1"></div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-muted rounded-full flex items-center justify-center text-muted-foreground text-sm font-medium">2</div>
+                    <span class="text-muted-foreground">Process Data</span>
+                </div>
+                <div class="h-px bg-border flex-1"></div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-muted rounded-full flex items-center justify-center text-muted-foreground text-sm font-medium">3</div>
+                    <span class="text-muted-foreground">Export & Store</span>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: ProcessingProgress -->
+
+        <!-- @COMPONENT: FileUploadSection [Drag and drop file upload area] -->
+        <div class="bg-card rounded-lg border border-border shadow-sm mb-8">
+            <div class="p-6">
+                <h2 class="text-xl font-semibold text-foreground mb-4">Upload CSV File</h2>
+                
+                <div class="border-2 border-dashed border-border rounded-lg p-8 text-center file-upload-hover" data-implementation="Handle file drop and selection">
+                    <div class="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-upload text-muted-foreground text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-foreground mb-2">Drop your CSV file here</h3>
+                    <p class="text-muted-foreground mb-4">or click to browse files</p>
+                    <input type="file" accept=".csv" class="hidden" id="csvFileInput" data-implementation="File upload handler">
+                    <label for="csvFileInput" class="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 cursor-pointer transition-colors">
+                        <i class="fas fa-folder-open mr-2"></i>
+                        Choose File
+                    </label>
+                    <p class="text-xs text-muted-foreground mt-3">Supports CSV files up to 10MB</p>
+                </div>
+
+                <div class="mt-4 hidden" id="fileInfo" data-implementation="Show selected file information">
+                    <div class="flex items-center justify-between p-4 bg-accent rounded-lg">
+                        <div class="flex items-center space-x-3">
+                            <i class="fas fa-file-csv text-accent-foreground text-lg"></i>
+                            <div>
+                                <p class="font-medium text-accent-foreground" data-bind="fileName">webinar_attendance.csv</p>
+                                <p class="text-sm text-muted-foreground" data-bind="fileSize">2.3 MB</p>
+                            </div>
+                        </div>
+                        <button class="text-destructive hover:text-destructive/80 transition-colors" data-event="click:removeFile">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: FileUploadSection -->
+
+        <!-- @COMPONENT: DataProcessingSection [Shows processing results and validation] -->
+        <div class="bg-card rounded-lg border border-border shadow-sm mb-8" id="processingSection" style="display: none;" data-implementation="Show after file upload">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-semibold text-foreground">Data Processing Results</h2>
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                            <span class="text-sm text-muted-foreground">Valid Records: <span class="font-medium text-foreground" data-bind="validCount">142</span></span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-3 h-3 bg-amber-500 rounded-full"></div>
+                            <span class="text-sm text-muted-foreground">Duplicates: <span class="font-medium text-foreground" data-bind="duplicateCount">8</span></span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                            <span class="text-sm text-muted-foreground">Errors: <span class="font-medium text-foreground" data-bind="errorCount">3</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- @COMPONENT: ValidationSummary [Summary of validation results] -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <i class="fas fa-check-circle text-green-600"></i>
+                            <h3 class="font-medium text-green-800">Valid Records</h3>
+                        </div>
+                        <p class="text-2xl font-bold text-green-600" data-bind="validRecords">142</p>
+                        <p class="text-sm text-green-600">Records ready for storage</p>
+                    </div>
+                    
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <i class="fas fa-exclamation-triangle text-amber-600"></i>
+                            <h3 class="font-medium text-amber-800">Duplicates Found</h3>
+                        </div>
+                        <p class="text-2xl font-bold text-amber-600" data-bind="duplicateRecords">8</p>
+                        <p class="text-sm text-amber-600">Records need review</p>
+                    </div>
+                    
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <i class="fas fa-times-circle text-red-600"></i>
+                            <h3 class="font-medium text-red-800">Invalid Records</h3>
+                        </div>
+                        <p class="text-2xl font-bold text-red-600" data-bind="invalidRecords">3</p>
+                        <p class="text-sm text-red-600">Records need correction</p>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: ValidationSummary -->
+
+                <!-- @COMPONENT: DataFilters [Filter and search controls] -->
+                <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                    <div class="flex-1">
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
+                            <input type="text" placeholder="Search by name, email, or phone..." class="pl-10 pr-4 py-2 w-full border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent" data-implementation="Search functionality">
+                        </div>
+                    </div>
+                    <select class="px-4 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring" data-implementation="Filter by validation status">
+                        <option value="all">All Records</option>
+                        <option value="valid">Valid Only</option>
+                        <option value="duplicates">Duplicates Only</option>
+                        <option value="errors">Errors Only</option>
+                    </select>
+                    <select class="px-4 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring" data-implementation="Filter by country">
+                        <option value="all">All Countries</option>
+                        <option value="saudi">Saudi Arabia</option>
+                        <option value="uae">UAE</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <!-- @END_COMPONENT: DataFilters -->
+
+                <!-- @COMPONENT: DataTable [Main data display table] -->
+                <div class="border border-border rounded-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-muted">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Name</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Email</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Phone</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Time (min)</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Country</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-card divide-y divide-border">
+                                <!-- @MAP: attendeeRecords.map(record => ( -->
+                                <tr class="hover:bg-accent transition-colors" data-mock="true">
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                            <span class="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">Valid</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex flex-col">
+                                            <span class="font-medium text-foreground" data-bind="record.fullName">عبد الله حمدان</span>
+                                            <span class="text-xs text-muted-foreground" data-bind="record.originalName">Abdullah Hamdan</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-foreground" data-bind="record.email">abdullah@example.com</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-foreground" data-bind="record.phone">5444444444</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm font-medium text-foreground" data-bind="record.sessionTime">37</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-foreground" data-bind="record.country">Saudi Arabia</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center space-x-2">
+                                            <button class="p-1 text-primary hover:bg-primary/10 rounded transition-colors" data-event="click:editRecord" data-implementation="Open edit modal">
+                                                <i class="fas fa-edit text-sm"></i>
+                                            </button>
+                                            <button class="p-1 text-destructive hover:bg-destructive/10 rounded transition-colors" data-event="click:deleteRecord" data-implementation="Confirm and delete record">
+                                                <i class="fas fa-trash text-sm"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- Duplicate Group Example -->
+                                <tr class="bg-amber-50 border-l-4 border-amber-400" data-mock="true">
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-2 h-2 bg-amber-500 rounded-full"></div>
+                                            <span class="text-xs font-medium text-amber-600 bg-amber-100 px-2 py-1 rounded">Duplicate</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex flex-col">
+                                            <span class="font-medium text-foreground" data-bind="record.fullName">محمد يوسف</span>
+                                            <span class="text-xs text-muted-foreground" data-bind="record.originalName">Mohammed Yousef</span>
+                                            <span class="text-xs text-amber-600 bg-amber-100 px-2 py-0.5 rounded mt-1 inline-block w-fit">2 duplicates found</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-foreground" data-bind="record.email">mohammed.yousef@example.com</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-foreground" data-bind="record.phone">9876543210</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm font-medium text-foreground" data-bind="record.sessionTime">45</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-foreground" data-bind="record.country">UAE</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center space-x-2">
+                                            <button class="p-1 text-amber-600 hover:bg-amber-100 rounded transition-colors" data-event="click:viewDuplicates" data-implementation="Show duplicate group modal">
+                                                <i class="fas fa-eye text-sm"></i>
+                                            </button>
+                                            <button class="p-1 text-primary hover:bg-primary/10 rounded transition-colors" data-event="click:editRecord">
+                                                <i class="fas fa-edit text-sm"></i>
+                                            </button>
+                                            <button class="p-1 text-destructive hover:bg-destructive/10 rounded transition-colors" data-event="click:deleteRecord">
+                                                <i class="fas fa-trash text-sm"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- Error Record Example -->
+                                <tr class="bg-red-50 border-l-4 border-red-400" data-mock="true">
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                                            <span class="text-xs font-medium text-red-600 bg-red-100 px-2 py-1 rounded">Error</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex flex-col">
+                                            <span class="font-medium text-foreground" data-bind="record.fullName">أحمد</span>
+                                            <span class="text-xs text-red-600">Missing last name</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex flex-col">
+                                            <span class="text-sm text-foreground" data-bind="record.email">invalid-email</span>
+                                            <span class="text-xs text-red-600">Invalid email format</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-muted-foreground">--</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm font-medium text-foreground" data-bind="record.sessionTime">12</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-foreground" data-bind="record.country">Saudi Arabia</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center space-x-2">
+                                            <button class="p-1 text-primary hover:bg-primary/10 rounded transition-colors" data-event="click:editRecord" data-implementation="Open edit modal to fix errors">
+                                                <i class="fas fa-edit text-sm"></i>
+                                            </button>
+                                            <button class="p-1 text-destructive hover:bg-destructive/10 rounded transition-colors" data-event="click:deleteRecord">
+                                                <i class="fas fa-trash text-sm"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- @END_MAP )) -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- @COMPONENT: TablePagination [Pagination controls] -->
+                <div class="flex items-center justify-between pt-4">
+                    <div class="text-sm text-muted-foreground">
+                        Showing <span class="font-medium">1</span> to <span class="font-medium">10</span> of <span class="font-medium" data-bind="totalRecords">153</span> records
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button class="px-3 py-1 text-sm border border-border rounded hover:bg-accent transition-colors" data-event="click:previousPage">Previous</button>
+                        <button class="px-3 py-1 text-sm bg-primary text-primary-foreground rounded">1</button>
+                        <button class="px-3 py-1 text-sm border border-border rounded hover:bg-accent transition-colors">2</button>
+                        <button class="px-3 py-1 text-sm border border-border rounded hover:bg-accent transition-colors">3</button>
+                        <button class="px-3 py-1 text-sm border border-border rounded hover:bg-accent transition-colors" data-event="click:nextPage">Next</button>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: TablePagination -->
+            </div>
+        </div>
+        <!-- @END_COMPONENT: DataProcessingSection -->
+
+        <!-- @COMPONENT: ErrorDetailsSection [Detailed error reporting] -->
+        <div class="bg-card rounded-lg border border-border shadow-sm mb-8" id="errorSection" style="display: none;" data-implementation="Show when errors exist">
+            <div class="p-6">
+                <h2 class="text-xl font-semibold text-foreground mb-4">Validation Errors</h2>
+                
+                <div class="space-y-4">
+                    <!-- @MAP: validationErrors.map(error => ( -->
+                    <div class="border border-red-200 rounded-lg p-4 bg-red-50" data-mock="true">
+                        <div class="flex items-start space-x-3">
+                            <i class="fas fa-exclamation-circle text-red-500 mt-0.5"></i>
+                            <div class="flex-1">
+                                <h4 class="font-medium text-red-800" data-bind="error.type">Invalid Email Format</h4>
+                                <p class="text-sm text-red-600 mt-1" data-bind="error.description">Row 15: Email "invalid-email" does not contain @ symbol</p>
+                                <div class="mt-2 flex items-center space-x-2">
+                                    <span class="text-xs text-red-600">Record:</span>
+                                    <span class="text-xs font-mono bg-red-100 px-2 py-1 rounded" data-bind="error.recordData">أحمد, invalid-email, --, 12, Saudi Arabia</span>
+                                </div>
+                            </div>
+                            <button class="text-primary hover:text-primary/80 transition-colors" data-event="click:fixError" data-implementation="Jump to record and open edit modal">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="border border-red-200 rounded-lg p-4 bg-red-50" data-mock="true">
+                        <div class="flex items-start space-x-3">
+                            <i class="fas fa-exclamation-circle text-red-500 mt-0.5"></i>
+                            <div class="flex-1">
+                                <h4 class="font-medium text-red-800">Missing Required Data</h4>
+                                <p class="text-sm text-red-600 mt-1">Row 28: Last name is empty or contains only "--"</p>
+                                <div class="mt-2 flex items-center space-x-2">
+                                    <span class="text-xs text-red-600">Record:</span>
+                                    <span class="text-xs font-mono bg-red-100 px-2 py-1 rounded">سارة, sarah@example.com, --, 23, UAE</span>
+                                </div>
+                            </div>
+                            <button class="text-primary hover:text-primary/80 transition-colors" data-event="click:fixError">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- @END_MAP )) -->
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: ErrorDetailsSection -->
+
+        <!-- @COMPONENT: ActionButtons [Export and database storage controls] -->
+        <div class="bg-card rounded-lg border border-border shadow-sm">
+            <div class="p-6">
+                <h2 class="text-xl font-semibold text-foreground mb-4">Export & Storage Options</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Database Storage Section -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-medium text-foreground">Database Storage</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-foreground mb-2">Database Type</label>
+                                <select class="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring" data-implementation="Database selection">
+                                    <option value="mysql">MySQL</option>
+                                    <option value="postgresql">PostgreSQL</option>
+                                    <option value="firebase">Firebase</option>
+                                    <option value="mongodb">MongoDB</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-foreground mb-2">Table Name</label>
+                                <input type="text" value="webinar_attendees" class="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring" data-implementation="Table name input">
+                            </div>
+                            <button class="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors" data-event="click:storeInDatabase" data-implementation="Store cleaned data in database">
+                                <i class="fas fa-database"></i>
+                                <span>Store in Database</span>
+                                <span class="bg-primary-foreground/20 px-2 py-1 rounded text-sm" data-bind="validRecordsCount">142 records</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Excel Export Section -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-medium text-foreground">Excel Export</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-3">
+                                <input type="checkbox" id="includeErrors" class="w-4 h-4 text-primary focus:ring-ring border-border rounded" data-implementation="Include errors checkbox">
+                                <label for="includeErrors" class="text-sm text-foreground">Include error records</label>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <input type="checkbox" id="includeDuplicates" class="w-4 h-4 text-primary focus:ring-ring border-border rounded" checked data-implementation="Include duplicates checkbox">
+                                <label for="includeDuplicates" class="text-sm text-foreground">Include duplicate records</label>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <input type="checkbox" id="arabicSupport" class="w-4 h-4 text-primary focus:ring-ring border-border rounded" checked data-implementation="Arabic support checkbox">
+                                <label for="arabicSupport" class="text-sm text-foreground">Arabic text support</label>
+                            </div>
+                            <button class="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors" data-event="click:exportExcel" data-implementation="Export to Excel with openpyxl">
+                                <i class="fas fa-file-excel"></i>
+                                <span>Download Excel</span>
+                                <span class="bg-white/20 px-2 py-1 rounded text-sm" data-bind="exportRecordsCount">150 records</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Processing Status -->
+                <div class="mt-6 p-4 bg-muted rounded-lg" id="processingStatus" style="display: none;" data-implementation="Show during processing operations">
+                    <div class="flex items-center space-x-3">
+                        <div class="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full"></div>
+                        <span class="text-foreground" data-bind="processingMessage">Processing data and storing in database...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: ActionButtons -->
+    </main>
+
+    <!-- @COMPONENT: EditRecordModal [Modal for editing individual records] -->
+    <div id="editModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" style="display: none;" data-implementation="Modal for editing records">
+        <div class="bg-card rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-semibold text-foreground">Edit Record</h3>
+                    <button class="text-muted-foreground hover:text-foreground transition-colors" data-event="click:closeModal">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+
+                <form class="space-y-4" data-implementation="Form validation and submission">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-foreground mb-2">First Name</label>
+                            <input type="text" value="عبد الله" class="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring" data-bind="editRecord.firstName">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-foreground mb-2">Last Name</label>
+                            <input type="text" value="حمدان" class="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring" data-bind="editRecord.lastName">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-foreground mb-2">Email</label>
+                        <input type="email" value="abdullah@example.com" class="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring" data-bind="editRecord.email">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-foreground mb-2">Phone Number</label>
+                        <input type="text" value="5444444444" class="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring" data-bind="editRecord.phone">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-foreground mb-2">Session Time (minutes)</label>
+                            <input type="number" value="37" class="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring" data-bind="editRecord.sessionTime">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-foreground mb-2">Country</label>
+                            <input type="text" value="Saudi Arabia" class="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring" data-bind="editRecord.country">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-3 pt-4">
+                        <button type="button" class="flex-1 px-4 py-2 border border-border rounded-md text-foreground hover:bg-accent transition-colors" data-event="click:cancelEdit">
+                            Cancel
+                        </button>
+                        <button type="submit" class="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors" data-event="click:saveRecord" data-implementation="Validate and save record">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: EditRecordModal -->
+
+    <!-- @COMPONENT: DuplicateGroupModal [Modal for viewing and managing duplicate records] -->
+    <div id="duplicateModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" style="display: none;" data-implementation="Modal for managing duplicate records">
+        <div class="bg-card rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-semibold text-foreground">Duplicate Records Management</h3>
+                    <button class="text-muted-foreground hover:text-foreground transition-colors" data-event="click:closeDuplicateModal">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+
+                <div class="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div class="flex items-center space-x-2 mb-2">
+                        <i class="fas fa-info-circle text-amber-600"></i>
+                        <span class="font-medium text-amber-800">Duplicate Group Found</span>
+                    </div>
+                    <p class="text-sm text-amber-700">Multiple records found for: <span class="font-medium" data-bind="duplicateEmail">mohammed.yousef@example.com</span></p>
+                </div>
+
+                <div class="space-y-3">
+                    <!-- @MAP: duplicateRecords.map((record, index) => ( -->
+                    <div class="border border-border rounded-lg p-4 hover:bg-accent transition-colors" data-mock="true">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div>
+                                    <span class="text-xs text-muted-foreground">Name</span>
+                                    <p class="font-medium text-foreground" data-bind="record.name">محمد يوسف</p>
+                                </div>
+                                <div>
+                                    <span class="text-xs text-muted-foreground">Join Time</span>
+                                    <p class="text-sm text-foreground" data-bind="record.joinTime">9:30</p>
+                                </div>
+                                <div>
+                                    <span class="text-xs text-muted-foreground">Session Time</span>
+                                    <p class="text-sm text-foreground" data-bind="record.sessionTime">45 min</p>
+                                </div>
+                                <div>
+                                    <span class="text-xs text-muted-foreground">Country</span>
+                                    <p class="text-sm text-foreground" data-bind="record.country">UAE</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2 ml-4">
+                                <button class="px-3 py-1 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors" data-event="click:keepRecord" data-implementation="Mark as primary record">
+                                    Keep
+                                </button>
+                                <button class="px-3 py-1 text-xs border border-border rounded text-foreground hover:bg-accent transition-colors" data-event="click:editDuplicate">
+                                    Edit
+                                </button>
+                                <button class="px-3 py-1 text-xs text-destructive hover:bg-destructive/10 rounded transition-colors" data-event="click:deleteDuplicate">
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border border-border rounded-lg p-4 hover:bg-accent transition-colors" data-mock="true">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div>
+                                    <span class="text-xs text-muted-foreground">Name</span>
+                                    <p class="font-medium text-foreground">Mohammed Yousef</p>
+                                </div>
+                                <div>
+                                    <span class="text-xs text-muted-foreground">Join Time</span>
+                                    <p class="text-sm text-foreground">9:18</p>
+                                </div>
+                                <div>
+                                    <span class="text-xs text-muted-foreground">Session Time</span>
+                                    <p class="text-sm text-foreground">52 min</p>
+                                </div>
+                                <div>
+                                    <span class="text-xs text-muted-foreground">Country</span>
+                                    <p class="text-sm text-foreground">UAE</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2 ml-4">
+                                <button class="px-3 py-1 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors" data-event="click:keepRecord">
+                                    Keep
+                                </button>
+                                <button class="px-3 py-1 text-xs border border-border rounded text-foreground hover:bg-accent transition-colors" data-event="click:editDuplicate">
+                                    Edit
+                                </button>
+                                <button class="px-3 py-1 text-xs text-destructive hover:bg-destructive/10 rounded transition-colors" data-event="click:deleteDuplicate">
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- @END_MAP )) -->
+                </div>
+
+                <div class="flex items-center justify-end space-x-3 pt-6 border-t border-border">
+                    <button class="px-4 py-2 border border-border rounded-md text-foreground hover:bg-accent transition-colors" data-event="click:cancelDuplicateManagement">
+                        Cancel
+                    </button>
+                    <button class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors" data-event="click:applyDuplicateChanges" data-implementation="Apply duplicate resolution choices">
+                        Apply Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: DuplicateGroupModal -->
+
+    <!-- @COMPONENT: ToastNotification [Success/error feedback] -->
+    <div id="toast" class="fixed top-4 right-4 z-50" style="display: none;" data-implementation="Toast notification system">
+        <div class="bg-card border border-border rounded-lg shadow-lg p-4 max-w-sm">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-check text-green-600"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="font-medium text-foreground" data-bind="toast.title">Success!</p>
+                    <p class="text-sm text-muted-foreground" data-bind="toast.message">Data successfully stored in database</p>
+                </div>
+                <button class="text-muted-foreground hover:text-foreground transition-colors" data-event="click:closeToast">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: ToastNotification -->
+
+    <script>
+        // TODO: Implement file upload, data processing, validation, database storage, and Excel export
+        (function() {
+            // File upload handling
+            const fileInput = document.getElementById('csvFileInput');
+            const fileInfo = document.getElementById('fileInfo');
+            const processingSection = document.getElementById('processingSection');
+            
+            // Mock file selection
+            fileInput?.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    fileInfo.style.display = 'block';
+                    setTimeout(() => {
+                        processingSection.style.display = 'block';
+                        processingSection.scrollIntoView({ behavior: 'smooth' });
+                    }, 1000);
+                }
+            });
+
+            // Modal management
+            const editModal = document.getElementById('editModal');
+            const duplicateModal = document.getElementById('duplicateModal');
+
+            // Edit button handlers
+            document.querySelectorAll('[data-event*="editRecord"]').forEach(button => {
+                button.addEventListener('click', () => {
+                    editModal.style.display = 'flex';
+                });
+            });
+
+            // Duplicate view handlers
+            document.querySelectorAll('[data-event*="viewDuplicates"]').forEach(button => {
+                button.addEventListener('click', () => {
+                    duplicateModal.style.display = 'flex';
+                });
+            });
+
+            // Close modal handlers
+            document.querySelectorAll('[data-event*="closeModal"], [data-event*="closeDuplicateModal"]').forEach(button => {
+                button.addEventListener('click', () => {
+                    editModal.style.display = 'none';
+                    duplicateModal.style.display = 'none';
+                });
+            });
+
+            // Toast notification system
+            const toast = document.getElementById('toast');
+            
+            function showToast(title, message, type = 'success') {
+                // TODO: Implement toast notification display logic
+                toast.style.display = 'block';
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                }, 3000);
+            }
+
+            // Database storage simulation
+            document.querySelector('[data-event*="storeInDatabase"]')?.addEventListener('click', function() {
+                const processingStatus = document.getElementById('processingStatus');
+                processingStatus.style.display = 'block';
+                
+                // TODO: Implement actual database storage logic
+                setTimeout(() => {
+                    processingStatus.style.display = 'none';
+                    showToast('Success!', 'Data successfully stored in database');
+                }, 2000);
+            });
+
+            // Excel export simulation
+            document.querySelector('[data-event*="exportExcel"]')?.addEventListener('click', function() {
+                // TODO: Implement Excel export using openpyxl or pandas
+                showToast('Export Started', 'Excel file is being generated...');
+                setTimeout(() => {
+                    showToast('Download Ready', 'Excel file has been downloaded');
+                }, 1500);
+            });
+        })();
+    </script>
+</body>
+</html>
